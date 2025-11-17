@@ -176,7 +176,7 @@ def main() -> None:
 
     # Initialize Pinecone client and ensure the index exists
     pinecone_client = Pinecone(api_key=pinecone_api_key)
-    ensure_index(pinecone_client)  # Runs with INDEX_NAME="dbjsonthewebv3"
+    ensure_index(pinecone_client)
 
     # Initialize PineconeVectorStore
     vectorstore = PineconeVectorStore(index_name=INDEX_NAME, embedding=embeddings)
