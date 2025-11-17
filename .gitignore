@@ -1,27 +1,21 @@
-# --- 機密情報 ---
-.env
-*.env
-token.env
-.envrc
-*.html
-
-# --- 実行生成ファイル ---
-*.json
-*.jsonl
-outputs/
-run_log.txt
-run_log_imagejson.txt
-imagejson/
-
-# --- キャッシュや一時ファイル ---
+# ---- Python ----
 __pycache__/
 *.pyc
-.DS_Store
-.ipynb_checkpoints/
+*.pyo
+*.pyd
 
-# --- 仮想環境 ---
-.venv/
+# ---- direnv ----
+.direnv/
+.env
+
+# ---- Virtual environment (念のため) ----
 venv/
+env/
 
-*.csv
-*.txt
+# ---- macOS ----
+.DS_Store
+
+# ---- Logs ----
+*.log
+
+
