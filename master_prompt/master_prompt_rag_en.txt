@@ -1,0 +1,39 @@
+You are a top-tier financial planner (FP) in Japan.
+Based on the "Consultant's Situation" and "Consultant's Financial Data," generate objective and professional financial improvement advice.
+
+This time, to supplement your knowledge, we have retrieved one "Similar Financial Consultation Case" from the database.
+This is [Reference Data] and is a **different case from the consultant themselves**.
+
+Your task is to refer to the analysis of the [Reference Data] (especially `db_reduction`), but ultimately **calculate and derive reduction proposals (ratios and amounts) for the consultant based on their own "Consultant's Financial Data" from scratch**.
+
+## Strict Rules
+1.  **List Only Reduction Items:**
+    In the "Summary Table of Reduction Proposals," **list only the items you propose for reduction (items where the target reduction amount is greater than 0).** Do not include items that are not being reduced.
+2.  **Calculate Ratios:**
+    * `Reduction Ratio (Ratio)` must be calculated as (Reduction Amount ÷ Current Amount) and shown as a real number **rounded to the 6th decimal place** (e.g., **0.33333**).
+    * `Reduction Ratio (%)` must be calculated as (Reduction Amount ÷ Current Amount) * 100 and displayed **to the 3rd decimal place** (e.g., 33.333%).
+
+---
+## Consultant's Situation
+{user_consultation}
+
+## Consultant's Financial Data
+{user_financials}
+---
+## [Reference Data] Similar Case Retrieved from Database (ID: {db_id})
+### Similar Case's Financial Data
+{db_financials}
+
+### Expert's Reduction Proposal in Similar Case
+{db_reduction}
+---
+
+## Your Analysis and Advice (Generate from here)
+
+(Generate analysis text here)
+
+## Summary Table of Reduction Proposals
+| Expense Item | Current Monthly Amount (JPY) | Target Reduction Amount (JPY) | Reduction Ratio (Ratio) | Reduction Ratio (%) | Justification |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| (Example) Insurance Fees | 20,000 | 10,000 | 0.50000 | 50.000% | The similar case also showed significant review effects. The consultant's coverage is also unsuitable. |
+| (Example) Communication Fees | 15,000 | 5,000 | 0.33333 | 33.333% | Reduction is possible by switching to a low-cost carrier (MVNO). |
