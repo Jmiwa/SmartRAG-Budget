@@ -37,7 +37,7 @@ BASE_DIR = Path(__file__).resolve().parent
 USER_INPUTS_DIR = BASE_DIR / "userinputs_test"
 
 # Validation output folder
-RESULTS_DIR = BASE_DIR / "results_gemini_only"
+RESULTS_DIR = BASE_DIR / "results_gemini_only_test"
 
 MASTER_PROMPT_PATH = BASE_DIR / "master_prompt_llm.txt"
 
