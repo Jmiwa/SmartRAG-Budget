@@ -36,9 +36,9 @@ from langchain_pinecone import PineconeVectorStore  # type: ignore
 # Recommended for pinecone-client v3.x and later
 # (For v2.x use `from pinecone import Pinecone, ServerlessSpec`)
 try:
-    from pinecone import Pinecone, ServerlessSpec # type: ignore
+    from pinecone import Pinecone, ServerlessSpec  # type: ignore
 except ImportError:
-    print("エラー: pinecone-client がインストールされていません。")
+    print("Error: pinecone-client is not installed.")
     print("pip install pinecone-client")
     sys.exit(1)
 
@@ -90,14 +90,14 @@ def load_documents(data_dir: Path) -> Tuple[List[str], List[Document]]:
         content = payload.get("consultation_text")
         if not content:
             print(
-                f"警告: {json_path.name} に 'consultation_text' がありません。スキップします。"
+                f"Warning: 'consultation_text' not found in {json_path.name}. Skipping."
             )
             continue
 
         # 2. Pinecone vector ID
         vector_id = str(payload.get("id"))
         if not vector_id:
-            print(f"警告: {json_path.name} に 'id' がありません。スキップします。")
+            print(f"Warning: 'id' not found in {json_path.name}. Skipping.")
             continue
 
         # 3. Metadata
@@ -150,9 +150,7 @@ def main() -> None:
     data_dir = base_dir / "dbjson"
 
     if not data_dir.is_dir():
-        print(
-            f"エラー: データディレクトリが見つかりません: {data_dir}", file=sys.stderr
-        )
+        print(f"Error: Data directory not found: {data_dir}", file=sys.stderr)
         return
 
     if load_dotenv is not None:
@@ -167,11 +165,11 @@ def main() -> None:
     # Load all documents
     all_ids, all_documents = load_documents(data_dir)
     if not all_documents:
-        print("Upsert対象のJSONドキュメントが見つかりませんでした。")
+        print("No JSON documents found to upsert.")
         return
 
     total_docs = len(all_documents)
-    print(f"{total_docs}件のドキュメントをメモリに読み込みました。")
+    print(f"Loaded {total_docs} documents into memory.")
 
     # Initialize embedding model
     embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
@@ -185,7 +183,7 @@ def main() -> None:
 
     # --- 4. Batch processing loop with rate-limit mitigation ---
     print(
-        f"'{INDEX_NAME}' インデックスに {total_docs} 件のドキュメントを {BATCH_SIZE} 件ずつのバッチでUpsertします..."
+        f"Upserting {total_docs} documents to index '{INDEX_NAME}' in batches of {BATCH_SIZE}..."
     )
 
     total_upserted = 0
@@ -220,7 +218,7 @@ def main() -> None:
             print("Skipping this batch and continuing...")
             time.sleep(SLEEP_TIME)  # Wait on errors as well
 
-    print(f"\n--- 完了 ---")
+    print(f"\n--- Complete ---")
     print(
         f"Total {total_upserted} / {total_docs} documents upserted into Pinecone index '{INDEX_NAME}'."
     )
