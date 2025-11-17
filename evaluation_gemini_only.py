@@ -39,7 +39,7 @@ USER_INPUTS_DIR = BASE_DIR / "userinputs_test"
 # Validation output folder
 RESULTS_DIR = BASE_DIR / "results_gemini_only_test"
 
-MASTER_PROMPT_PATH = BASE_DIR / "master_prompt_llm_jp.txt"
+MASTER_PROMPT_PATH = BASE_DIR / "master_prompt/master_prompt_llm_jp.txt"
 
 # --- Logging ---
 log_path = "gemini_only_test_run_log.txt"

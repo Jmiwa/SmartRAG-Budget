@@ -54,7 +54,7 @@ USER_INPUTS_DIR = BASE_DIR / "userinputs_test"
 RESULTS_DIR = BASE_DIR / "results_gemini_rag_test"
 
 # RAG prompt file
-MASTER_PROMPT_PATH = BASE_DIR / "master_prompt_rag_jp.txt"
+MASTER_PROMPT_PATH = BASE_DIR / "master_prompt/master_prompt_rag_jp.txt"
 
 # --- Logging ---
 log_path = "gemini_rag_test_run_log.txt"
