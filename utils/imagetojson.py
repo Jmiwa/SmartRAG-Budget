@@ -1,9 +1,9 @@
 """
 imagetojson.py
-CSV(merged_csv_data.csv)全行のImage列URLから家計簿画像を取得し、
-Gemini 2.5 Flashで構造化(Rich) JSONを生成。
-★ 修正: CSVの 'ID' 列を読み取り、ファイル名とJSON内部の 'case_id' として使用する。
-既存出力はスキップ、上限エラーで安全停止、ログは run_log_imagejson.txt。
+Fetch household ledger images from the Image column of every row in merged_csv_data.csv,
+and generate structured (Rich) JSON with Gemini 2.5 Flash.
+Use the CSV 'ID' column as both the filename and the internal JSON 'case_id'.
+Existing outputs are skipped, safety stops on quota errors, and logs are written to run_log_imagejson.txt.
 """
 
 from google import genai
@@ -13,15 +13,15 @@ import os, requests, json, time, sys  # type: ignore
 import pandas as pd  # type: ignore
 from datetime import datetime
 
-# ======== 設定 ========
+# ======== Config ========
 CSV_PATH = "merged_csv_data.csv"
 OUT_DIR = "imagejson"
 LOG_PATH = "run_log_imagejson.txt"
-MODEL = "gemini-2.5-flash"  # ★ 指定モデル
-SLEEP_SEC = 1.5  # ★ リクエスト間スリープ（秒）
-MAX_ITEMS = 1000000  # 任意の打ち切り数（基本は全件）
+MODEL = "gemini-2.5-flash"  # Target model
+SLEEP_SEC = 1.5  # Sleep between requests (seconds)
+MAX_ITEMS = 1000000  # Optional cutoff (default: process all)
 
-# ======== 初期化 ========
+# ======== Init ========
 t0_all = time.perf_counter()
 os.makedirs(OUT_DIR, exist_ok=True)
 load_dotenv()
@@ -38,17 +38,17 @@ def log(msg: str):
 
 log("=== Batch start (CSV→Rich JSON using Gemini 2.5 Flash) ===")
 
-# ======== CSV読み込み ========
+# ======== Load CSV ========
 try:
-    # CSV読み込み時、'ID' 列を文字列として読み込むよう指定するとより安全
+    # Read 'ID' as string to be safe
     df = pd.read_csv(CSV_PATH, dtype={"ID": str})
 except Exception as e:
-    log(f"❌ CSV読み込み失敗: {e}")
+    log(f"❌ Failed to read CSV: {e}")
     sys.exit(1)
 
 log(f"Total rows in CSV: {len(df)}")
 
-# ======== Geminiプロンプト ========
+# ======== Gemini prompt ========
 PROMPT = """
 あなたは家計表画像の構造化変換アシスタントです。
 与えられた画像（1枚）から、添付のJSONスキーマ「だけ」を満たすオブジェクトを出力してください。
@@ -97,18 +97,17 @@ PROMPT = """
 }
 """
 
-# ======== カウンタ ========
+# ======== Counters ========
 count_done = count_skip = count_err = 0
 jsonl_path = os.path.join(OUT_DIR, "household.jsonl")
 
-# ======== メインループ ========
+# ======== Main loop ========
 for idx, row in df.iterrows():
     if count_done >= MAX_ITEMS:
         log(f"⛳ Hit MAX_ITEMS={MAX_ITEMS}. Stopping safely.")
         break
 
-    # --- ▼ 修正箇所 ▼ ---
-    # CSVから 'ID' カラムを取得し、整数に変換
+    # Grab 'ID' column from CSV and convert to int
     try:
         case_id_str = str(row.get("ID", "")).strip()
         if not case_id_str or case_id_str.lower() == "nan":
@@ -123,11 +122,10 @@ for idx, row in df.iterrows():
         count_skip += 1
         continue
 
-    # CSVの 'ID' を使って出力パスを決定
+    # Build output path using CSV 'ID'
     out_path = os.path.join(OUT_DIR, f"{case_id:04d}.json")
-    # --- ▲ 修正ここまで ▲ ---
 
-    # 既存スキップ
+    # Skip if already exists
     if os.path.exists(out_path):
         log(f"⏭️ Skip {out_path} (already exists)")
         count_skip += 1
@@ -138,7 +136,7 @@ for idx, row in df.iterrows():
     article_url = str(row.get("URL", "")).strip()
 
     if not image_url or image_url.lower() == "nan":
-        # ログにCSVのID（case_id）を使うように変更
+        # Log with CSV ID (case_id)
         log(f"[{case_id:04d}] ⚠️ Image URL missing. Skip.")
         count_skip += 1
         continue
@@ -146,12 +144,12 @@ for idx, row in df.iterrows():
     log(f"[{case_id:04d}] Fetching image & parsing | {title}")
 
     try:
-        # ---- 画像取得 ----
+        # ---- Fetch image ----
         r = requests.get(image_url, timeout=25)
         r.raise_for_status()
         img_bytes = r.content
 
-        # ---- Gemini 実行 ----
+        # ---- Run Gemini ----
         t1 = time.perf_counter()
         resp = client.models.generate_content(
             model=MODEL,
@@ -165,26 +163,24 @@ for idx, row in df.iterrows():
         raw = (resp.text or "").strip()
         log(f"[{case_id:04d}] Gemini ok ({elapsed:.2f}s)")
 
-        # ---- JSON整形 ----
+        # ---- Parse JSON ----
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
             data = {"status": "error", "raw_output": raw}
 
-        # メタ補完
+        # Fill metadata
         if "source" not in data or not isinstance(data["source"], dict):
             data["source"] = {}
 
-        # --- ▼ 修正箇所 ▼ ---
-        # JSON内部にもCSVから取得した正しい 'case_id' を書き込む
+        # Write correct case_id from CSV into JSON
         data["case_id"] = case_id
-        # --- ▲ 修正ここまで ▲ ---
 
         data["source"]["url"] = article_url or None
         data["source"]["image_url"] = image_url
         data["source"]["title"] = title
 
-        # ---- 保存 ----
+        # ---- Save ----
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         with open(jsonl_path, "a", encoding="utf-8") as f:
@@ -193,16 +189,16 @@ for idx, row in df.iterrows():
         count_done += 1
         log(f"✅ Saved {out_path}")
 
-        # ---- スリープでレート制御 ----
+        # ---- Sleep to manage rate ----
         time.sleep(SLEEP_SEC)
 
     except Exception as e:
         emsg = str(e)
-        # ログにCSVのID（case_id）を使うように変更
+        # Log with CSV ID (case_id)
         log(f"❌ Error on case {case_id:04d}: {emsg}")
         count_err += 1
 
-        # 上限検知で停止
+        # Stop on quota detection
         if ("RESOURCE_EXHAUSTED" in emsg) and (
             "GenerateRequestsPerDayPerProjectPerModel" in emsg
             or "per-project-per-model" in emsg
@@ -213,7 +209,7 @@ for idx, row in df.iterrows():
 
         continue
 
-# ======== サマリ ========
+# ======== Summary ========
 dt = time.perf_counter() - t0_all
 m, s = divmod(dt, 60)
 log(f"\nSummary: Done={count_done}, Skipped={count_skip}, Error={count_err}")
