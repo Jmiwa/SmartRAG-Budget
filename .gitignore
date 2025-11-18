@@ -19,3 +19,6 @@ env/
 *.log
 
 
+utils/imagejson
+utils/outputs
+
